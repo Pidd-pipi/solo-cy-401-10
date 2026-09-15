@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>自由职业者撮合平台 - API 文档</title>
+  <style>
+    body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 0; background: #f7f8fa; color: #1d2129; }
+    header { background: #243b53; color: #fff; padding: 20px 32px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #b6c2d1; font-size: 13px; }
+    main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    h2 { font-size: 16px; margin: 0 0 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0f1f3; }
+    th { color: #86909c; font-weight: 500; }
+    code { background: #f2f3f5; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    .m { display: inline-block; min-width: 44px; text-align: center; padding: 2px 8px; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 600; }
+    .GET { background: #00b42a; } .POST { background: #165dff; } .PUT { background: #ff7d00; } .PATCH { background: #722ed1; }
+  </style>
+</head>
+<body>
+  <header><h1>自由职业者撮合平台 · API 文档</h1><p>Go 1.22 + Gin + GORM · <a style="color:#a8c6ff" href="/docs/openapi.json">/docs/openapi.json</a></p></header>
+  <main>
+    <div class="card"><h2>认证</h2><table>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/auth/register</code></td><td>注册（requester/freelancer/both）</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/auth/login</code></td><td>登录（requester01/freelancer01/demo123456）</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/auth/me</code></td><td>当前用户</td></tr>
+    </table></div>
+    <div class="card"><h2>需求 Requirement</h2><table>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/requirements</code></td><td>需求大厅（status/minBudget/maxBudget/skill/page/page_size）</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/requirements</code></td><td>发布需求</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/requirements/:id</code></td><td>需求详情（含报价）</td></tr>
+      <tr><td><span class="m PUT">PUT</span></td><td><code>/api/v1/requirements/:id</code></td><td>编辑需求</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/requirements/:id/status</code></td><td>状态流转</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/requirements/:id/accept-bid</code></td><td>采纳报价并生成合同</td></tr>
+    </table></div>
+    <div class="card"><h2>报价 Bid</h2><table>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/bids?requirementId=</code></td><td>报价列表</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/bids</code></td><td>提交报价</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/bids/:id/withdraw</code></td><td>撤回报价</td></tr>
+    </table></div>
+    <div class="card"><h2>合同 Contract</h2><table>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/contracts</code></td><td>我的合同</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/contracts/:id</code></td><td>合同详情（含阶段）</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/contracts/:id/sign</code></td><td>签署确认</td></tr>
+      <tr><td><span class="m POST">POST</span></td><td><code>/api/v1/contracts/:id/complete</code></td><td>完成确认</td></tr>
+    </table></div>
+    <div class="card"><h2>其它</h2><table>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/dashboard</code></td><td>我的工作台</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/users/:id</code></td><td>个人资料</td></tr>
+      <tr><td><span class="m PATCH">PATCH</span></td><td><code>/api/v1/users/:id</code></td><td>编辑资料</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/api/v1/operation-logs</code></td><td>操作日志</td></tr>
+      <tr><td><span class="m GET">GET</span></td><td><code>/healthz</code></td><td>健康检查</td></tr>
+    </table></div>
+  </main>
+</body>
+</html>

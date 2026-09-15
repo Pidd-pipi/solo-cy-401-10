@@ -1,0 +1,24 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "自由职业者撮合平台", "version": "1.0.0" },
+  "paths": {
+    "/api/v1/auth/register": { "post": {} },
+    "/api/v1/auth/login": { "post": {} },
+    "/api/v1/auth/me": { "get": {} },
+    "/api/v1/users/{id}": { "get": {}, "patch": {} },
+    "/api/v1/requirements": { "get": {}, "post": {} },
+    "/api/v1/requirements/{id}": { "get": {}, "put": {} },
+    "/api/v1/requirements/{id}/status": { "post": {} },
+    "/api/v1/requirements/{id}/accept-bid": { "post": {} },
+    "/api/v1/bids": { "get": {}, "post": {} },
+    "/api/v1/bids/{id}/withdraw": { "post": {} },
+    "/api/v1/contracts": { "get": {} },
+    "/api/v1/contracts/{id}": { "get": {} },
+    "/api/v1/contracts/{id}/sign": { "post": {} },
+    "/api/v1/contracts/{id}/complete": { "post": {} },
+    "/api/v1/dashboard": { "get": {} },
+    "/api/v1/operation-logs": { "get": {} },
+    "/healthz": { "get": {} }
+  },
+  "components": { "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } } }
+}

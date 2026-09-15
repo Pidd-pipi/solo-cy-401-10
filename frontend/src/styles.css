@@ -1,0 +1,7 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; color: #303133; }
+.page { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+.page-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.muted { color: #909399; font-size: 13px; }
+.bid-card { border: 1px solid #e4e7ed; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: #fff; }

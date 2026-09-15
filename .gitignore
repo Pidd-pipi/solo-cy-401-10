@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+.idea/
+.vscode/
+backend/server
+backend/bin/
+*.test
+*.out
+coverage.out
+frontend/coverage/
+.playwright-cli/
