@@ -1,8 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"gorm.io/driver/sqlite"
@@ -16,7 +18,11 @@ import (
 
 func newFlowTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	// Each test case gets its own file-backed database, so cases always start
+	// from a clean state and repeated runs of the whole suite never see
+	// residue from earlier cases or earlier runs.
+	dsn := fmt.Sprintf("file:%s", filepath.Join(t.TempDir(), "flow_test.db"))
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
