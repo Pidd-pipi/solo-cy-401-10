@@ -86,6 +86,24 @@ func (r *RequirementRepository) Transaction(fn func(tx *gorm.DB) error) error {
 	return r.db.Transaction(fn)
 }
 
+// ClaimWinner atomically marks a requirement with the given winner and status,
+// but only while the requirement has no winner yet. The unclaimed condition is
+// part of the UPDATE, so when concurrent accepts target different bids of the
+// same requirement, exactly one claim matches a row and the others get
+// ErrConflict — a requirement can never end up with two winners.
+func (r *RequirementRepository) ClaimWinner(id, winnerID uint, status string) error {
+	res := r.db.Model(&model.Requirement{}).
+		Where("id = ? AND winner_id = ?", id, 0).
+		Updates(map[string]any{"winner_id": winnerID, "status": status})
+	if res.Error != nil {
+		return fmt.Errorf("claim requirement winner: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return ErrConflict
+	}
+	return nil
+}
+
 // WithTx returns a copy of the repository whose writes run inside tx.
 func (r *RequirementRepository) WithTx(tx *gorm.DB) *RequirementRepository {
 	return &RequirementRepository{db: tx}

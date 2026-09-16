@@ -133,12 +133,14 @@ func (s *RequirementService) UpdateStatus(id uint, status string, userID uint, u
 
 // AcceptBid accepts a bid and creates the contract (delegated to contract service).
 //
-// The bid transition, the requirement update and the contract insert share one
+// The bid transition, the requirement claim and the contract insert share one
 // database transaction — the single consistency boundary of this flow — so a
-// failure at any step leaves no partial state behind. The bid is claimed by an
-// atomic status transition (pending -> accepted): when two requests accept the
-// same bid concurrently, exactly one transition matches a row and the other
-// gets a conflict. Audit logs stay best-effort and never block the accept.
+// failure at any step leaves no partial state behind. Both rows are claimed by
+// atomic conditional updates: the bid must still be pending, and the
+// requirement must still have no winner. Concurrent accepts — of the same bid
+// or of different bids — therefore produce exactly one winner and one contract
+// per requirement; every losing request gets a conflict and rolls back. Audit
+// logs stay best-effort and never block the accept.
 func (s *RequirementService) AcceptBid(requirementID, bidID, userID uint, userName string, paymentType string, contracts *ContractService) (*model.Contract, error) {
 	var contract *model.Contract
 	err := s.requirements.Transaction(func(tx *gorm.DB) error {
@@ -166,11 +168,14 @@ func (s *RequirementService) AcceptBid(requirementID, bidID, userID uint, userNa
 			return fmt.Errorf("accept bid: %w", err)
 		}
 		bid.Status = constants.BidAccepted
-		r.WinnerID = bid.BidderID
-		r.Status = constants.RequirementInProgress
-		if err := requirements.Update(r); err != nil {
+		if err := requirements.ClaimWinner(r.ID, bid.BidderID, constants.RequirementInProgress); err != nil {
+			if errors.Is(err, repository.ErrConflict) {
+				return constants.NewAppError(constants.CodeConflict, "该需求已采纳其他报价")
+			}
 			return fmt.Errorf("update requirement after accept: %w", err)
 		}
+		r.WinnerID = bid.BidderID
+		r.Status = constants.RequirementInProgress
 		c, err := contracts.WithTx(tx).CreateFromBid(r, bid, userID, userName, paymentType)
 		if err != nil {
 			return err
