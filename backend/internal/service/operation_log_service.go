@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"gorm.io/gorm"
+
 	"github.com/gigmatch/gigmatch/internal/model"
 	"github.com/gigmatch/gigmatch/internal/repository"
 )
@@ -18,6 +20,13 @@ type OperationLogService struct {
 // NewOperationLogService builds an OperationLogService.
 func NewOperationLogService(logs *repository.OperationLogRepository, logger *slog.Logger) *OperationLogService {
 	return &OperationLogService{logs: logs, logger: logger}
+}
+
+// WithTx returns a copy of the service whose log writes run inside tx.
+// Recording stays best-effort: a failed write is logged and swallowed, so
+// it can never roll back the surrounding transaction.
+func (s *OperationLogService) WithTx(tx *gorm.DB) *OperationLogService {
+	return &OperationLogService{logs: s.logs.WithTx(tx), logger: s.logger}
 }
 
 // Record writes an operation log entry.

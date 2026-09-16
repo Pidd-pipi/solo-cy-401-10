@@ -65,6 +65,11 @@ func (r *ContractRepository) Update(c *model.Contract) error {
 	return nil
 }
 
+// WithTx returns a copy of the repository whose writes run inside tx.
+func (r *ContractRepository) WithTx(tx *gorm.DB) *ContractRepository {
+	return &ContractRepository{db: tx}
+}
+
 // CountByParty returns the number of contracts involving a user.
 func (r *ContractRepository) CountByParty(userID uint) (int64, error) {
 	var count int64

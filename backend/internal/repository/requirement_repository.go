@@ -79,6 +79,18 @@ func (r *RequirementRepository) Update(req *model.Requirement) error {
 	return nil
 }
 
+// Transaction runs fn inside a single database transaction: every write
+// issued through tx-bound repositories commits together, or rolls back
+// together when fn returns an error.
+func (r *RequirementRepository) Transaction(fn func(tx *gorm.DB) error) error {
+	return r.db.Transaction(fn)
+}
+
+// WithTx returns a copy of the repository whose writes run inside tx.
+func (r *RequirementRepository) WithTx(tx *gorm.DB) *RequirementRepository {
+	return &RequirementRepository{db: tx}
+}
+
 // ListByPublisher returns requirements published by a user.
 func (r *RequirementRepository) ListByPublisher(userID uint) ([]model.Requirement, error) {
 	var items []model.Requirement

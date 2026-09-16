@@ -1,8 +1,11 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
+
+	"gorm.io/gorm"
 
 	"github.com/gigmatch/gigmatch/internal/constants"
 	"github.com/gigmatch/gigmatch/internal/dto"
@@ -129,37 +132,55 @@ func (s *RequirementService) UpdateStatus(id uint, status string, userID uint, u
 }
 
 // AcceptBid accepts a bid and creates the contract (delegated to contract service).
+//
+// The bid transition, the requirement update and the contract insert share one
+// database transaction — the single consistency boundary of this flow — so a
+// failure at any step leaves no partial state behind. The bid is claimed by an
+// atomic status transition (pending -> accepted): when two requests accept the
+// same bid concurrently, exactly one transition matches a row and the other
+// gets a conflict. Audit logs stay best-effort and never block the accept.
 func (s *RequirementService) AcceptBid(requirementID, bidID, userID uint, userName string, paymentType string, contracts *ContractService) (*model.Contract, error) {
-	r, err := s.requirements.FindByID(requirementID)
+	var contract *model.Contract
+	err := s.requirements.Transaction(func(tx *gorm.DB) error {
+		requirements := s.requirements.WithTx(tx)
+		bids := s.bids.WithTx(tx)
+
+		r, err := requirements.FindByID(requirementID)
+		if err != nil {
+			return err
+		}
+		if r.PublisherID != userID {
+			return constants.ErrForbidden
+		}
+		bid, err := bids.FindByID(bidID)
+		if err != nil {
+			return err
+		}
+		if bid.RequirementID != requirementID {
+			return repository.ErrNotFound
+		}
+		if err := bids.TransitionStatus(bid.ID, constants.BidPending, constants.BidAccepted); err != nil {
+			if errors.Is(err, repository.ErrConflict) {
+				return constants.NewAppError(constants.CodeConflict, "该报价已处理")
+			}
+			return fmt.Errorf("accept bid: %w", err)
+		}
+		bid.Status = constants.BidAccepted
+		r.WinnerID = bid.BidderID
+		r.Status = constants.RequirementInProgress
+		if err := requirements.Update(r); err != nil {
+			return fmt.Errorf("update requirement after accept: %w", err)
+		}
+		c, err := contracts.WithTx(tx).CreateFromBid(r, bid, userID, userName, paymentType)
+		if err != nil {
+			return err
+		}
+		contract = c
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if r.PublisherID != userID {
-		return nil, constants.ErrForbidden
-	}
-	bid, err := s.bids.FindByID(bidID)
-	if err != nil {
-		return nil, err
-	}
-	if bid.RequirementID != requirementID {
-		return nil, repository.ErrNotFound
-	}
-	if bid.Status != constants.BidPending {
-		return nil, constants.NewAppError(constants.CodeConflict, "该报价已处理")
-	}
-	bid.Status = constants.BidAccepted
-	if err := s.bids.Update(bid); err != nil {
-		return nil, fmt.Errorf("accept bid: %w", err)
-	}
-	r.WinnerID = bid.BidderID
-	r.Status = constants.RequirementInProgress
-	if err := s.requirements.Update(r); err != nil {
-		return nil, fmt.Errorf("update requirement after accept: %w", err)
-	}
-	contract, err := contracts.CreateFromBid(r, bid, userID, userName, paymentType)
-	if err != nil {
-		return nil, err
-	}
-	s.logs.Record(userID, userName, "requirement.accept_bid", "requirement", r.ID, fmt.Sprintf("采纳报价 %d", bidID))
+	s.logs.Record(userID, userName, "requirement.accept_bid", "requirement", requirementID, fmt.Sprintf("采纳报价 %d", bidID))
 	return contract, nil
 }

@@ -26,6 +26,11 @@ func (r *OperationLogRepository) Create(l *model.OperationLog) error {
 	return nil
 }
 
+// WithTx returns a copy of the repository whose writes run inside tx.
+func (r *OperationLogRepository) WithTx(tx *gorm.DB) *OperationLogRepository {
+	return &OperationLogRepository{db: tx}
+}
+
 // List returns recent operation logs.
 func (r *OperationLogRepository) List(limit int) ([]model.OperationLog, error) {
 	if limit <= 0 || limit > 200 {

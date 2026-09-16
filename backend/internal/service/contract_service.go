@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"gorm.io/gorm"
+
 	"github.com/gigmatch/gigmatch/internal/constants"
 	"github.com/gigmatch/gigmatch/internal/model"
 	"github.com/gigmatch/gigmatch/internal/repository"
@@ -19,6 +21,13 @@ type ContractService struct {
 // NewContractService builds a ContractService.
 func NewContractService(contracts *repository.ContractRepository, logs *OperationLogService, logger *slog.Logger) *ContractService {
 	return &ContractService{contracts: contracts, logs: logs, logger: logger}
+}
+
+// WithTx returns a copy of the service whose contract (and audit log) writes
+// run inside tx, so they commit or roll back together with the caller's
+// transaction.
+func (s *ContractService) WithTx(tx *gorm.DB) *ContractService {
+	return &ContractService{contracts: s.contracts.WithTx(tx), logs: s.logs.WithTx(tx), logger: s.logger}
 }
 
 // ListByParty returns contracts involving the caller.

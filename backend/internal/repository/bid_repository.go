@@ -59,6 +59,28 @@ func (r *BidRepository) Update(b *model.Bid) error {
 	return nil
 }
 
+// TransitionStatus atomically moves a bid from one status to another. The
+// expected current status is part of the UPDATE condition, so a concurrent
+// transition of the same bid matches no row and ErrConflict is returned —
+// exactly one caller wins the race.
+func (r *BidRepository) TransitionStatus(id uint, from, to string) error {
+	res := r.db.Model(&model.Bid{}).
+		Where("id = ? AND status = ?", id, from).
+		Update("status", to)
+	if res.Error != nil {
+		return fmt.Errorf("transition bid status: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return ErrConflict
+	}
+	return nil
+}
+
+// WithTx returns a copy of the repository whose writes run inside tx.
+func (r *BidRepository) WithTx(tx *gorm.DB) *BidRepository {
+	return &BidRepository{db: tx}
+}
+
 // ListByBidder returns bids submitted by a user.
 func (r *BidRepository) ListByBidder(userID uint) ([]model.Bid, error) {
 	var bids []model.Bid
